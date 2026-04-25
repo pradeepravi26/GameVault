@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { GameListItem, Genre, Platform } from "@gamevault/contracts";
 import { Check, Search, X } from "lucide-react";
 import { GameCard } from "@/components/game-card";
@@ -25,18 +26,46 @@ const sortOptions = [
   { label: "Top Rated", sort: "averageScore", direction: "desc" },
 ] as const;
 
+const defaultSort = sortOptions[0];
+
+function parsePage(value: string | null) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function parseSortState(searchParams: URLSearchParams) {
+  const sort = searchParams.get("sort");
+  const direction = searchParams.get("direction");
+
+  const matchingOption = sortOptions.find(
+    (option) => option.sort === sort && option.direction === direction,
+  );
+
+  if (matchingOption) {
+    return matchingOption;
+  }
+
+  return defaultSort;
+}
+
 export default function CatalogPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const initialSortState = parseSortState(searchParams);
   const [games, setGames] = useState<GameListItem[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => parsePage(searchParams.get("page")));
   const [total, setTotal] = useState(0);
-  const [searchInput, setSearchInput] = useState("");
-  const [activeSearch, setActiveSearch] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState("");
-  const [selectedPlatform, setSelectedPlatform] = useState("");
-  const [sort, setSort] = useState("title");
-  const [direction, setDirection] = useState("asc");
+  const [searchInput, setSearchInput] = useState(() => searchParams.get("search") ?? "");
+  const [activeSearch, setActiveSearch] = useState(() => searchParams.get("search") ?? "");
+  const [selectedGenre, setSelectedGenre] = useState(() => searchParams.get("genre") ?? "");
+  const [selectedPlatform, setSelectedPlatform] = useState(
+    () => searchParams.get("platform") ?? "",
+  );
+  const [sort, setSort] = useState(() => initialSortState.sort);
+  const [direction, setDirection] = useState(() => initialSortState.direction);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,6 +96,50 @@ export default function CatalogPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+
+    if (activeSearch) {
+      nextParams.set("search", activeSearch);
+    }
+
+    if (selectedGenre) {
+      nextParams.set("genre", selectedGenre);
+    }
+
+    if (selectedPlatform) {
+      nextParams.set("platform", selectedPlatform);
+    }
+
+    if (sort !== defaultSort.sort || direction !== defaultSort.direction) {
+      nextParams.set("sort", sort);
+      nextParams.set("direction", direction);
+    }
+
+    if (page > 1) {
+      nextParams.set("page", String(page));
+    }
+
+    const nextQuery = nextParams.toString();
+    const currentQuery = searchParams.toString();
+
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+        scroll: false,
+      });
+    }
+  }, [
+    activeSearch,
+    direction,
+    page,
+    pathname,
+    router,
+    searchParams,
+    selectedGenre,
+    selectedPlatform,
+    sort,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,8 +196,8 @@ export default function CatalogPage() {
     setActiveSearch("");
     setSelectedGenre("");
     setSelectedPlatform("");
-    setSort("title");
-    setDirection("asc");
+    setSort(defaultSort.sort);
+    setDirection(defaultSort.direction);
     setPage(1);
   }
 
@@ -144,7 +217,14 @@ export default function CatalogPage() {
             <span>Current sort: {activeSortLabel}</span>
           </div>
 
-          <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(180px,0.8fr)_minmax(180px,0.8fr)_auto_auto]">
+          <form
+            className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(180px,0.8fr)_minmax(180px,0.8fr)_auto_auto]"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setPage(1);
+              setActiveSearch(searchInput.trim());
+            }}
+          >
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -200,16 +280,14 @@ export default function CatalogPage() {
             </Select>
 
             <Button
+              type="submit"
               className="h-10 px-4"
-              onClick={() => {
-                setPage(1);
-                setActiveSearch(searchInput.trim());
-              }}
             >
               Search
             </Button>
 
             <Button
+              type="button"
               variant="outline"
               className="h-10 px-4"
               onClick={resetFilters}
@@ -217,7 +295,7 @@ export default function CatalogPage() {
               <X className="h-4 w-4" />
               Reset
             </Button>
-          </div>
+          </form>
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="mr-1 text-sm text-muted-foreground">Sort by</span>
@@ -230,6 +308,7 @@ export default function CatalogPage() {
                   key={`${option.sort}-${option.direction}`}
                   variant={isActive ? "default" : "outline"}
                   size="sm"
+                  type="button"
                   aria-pressed={isActive}
                   onClick={() => {
                     setSort(option.sort);
