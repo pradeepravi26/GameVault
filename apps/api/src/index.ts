@@ -5,14 +5,17 @@ import { gamesRoute } from "./routes/games";
 import { genresRoute } from "./routes/genres";
 import { healthRoute } from "./routes/health";
 import { platformsRoute } from "./routes/platforms";
+import { authRoute } from "./routes/auth";
 
 const app = new Hono();
 app.use(
   "*",
   cors({
     origin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
+    credentials: true,
   }),
 );
+app.route("/", authRoute);
 app.route("/", healthRoute);
 app.route("/", genresRoute);
 app.route("/", platformsRoute);

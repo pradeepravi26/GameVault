@@ -1,7 +1,10 @@
 import type {
+  AuthResponse,
   GameListResponse,
+  LoginRequest,
   Genre,
   Platform,
+  RegisterRequest,
 } from "@gamevault/contracts";
 
 const apiBaseUrl =
@@ -12,6 +15,25 @@ async function fetchJson<T>(path: string) {
 
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
+  }
+
+  return (await response.json()) as T;
+}
+
+async function fetchJsonWithInit<T>(path: string, init?: RequestInit) {
+  const response = await fetch(`${apiBaseUrl}${path}`, init);
+
+  if (!response.ok) {
+    let message = `Request failed: ${response.status}`;
+
+    try {
+      const errorBody = (await response.json()) as { error?: string };
+      if (errorBody.error) {
+        message = errorBody.error;
+      }
+    } catch {}
+
+    throw new Error(message);
   }
 
   return (await response.json()) as T;
@@ -40,4 +62,39 @@ export function getGenres() {
 
 export function getPlatforms() {
   return fetchJson<Platform[]>("/platforms");
+}
+
+export function register(input: RegisterRequest) {
+  return fetchJsonWithInit<AuthResponse>("/auth/register", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export function login(input: LoginRequest) {
+  return fetchJsonWithInit<AuthResponse>("/auth/login", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export function logout() {
+  return fetchJsonWithInit<{ ok: true }>("/auth/logout", {
+    method: "POST",
+    credentials: "include",
+  });
+}
+
+export function getCurrentUser() {
+  return fetchJsonWithInit<AuthResponse>("/auth/me", {
+    credentials: "include",
+  });
 }

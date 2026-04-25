@@ -71,9 +71,36 @@ export const gameDetailSchema = z.object({
   ratingCount: z.number().int().min(0),
 });
 
+export const authUserSchema = z.object({
+  userId: z.number().int(),
+  username: z.string(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+});
+
+export const registerRequestSchema = z.object({
+  username: z.string().trim().min(3).max(50),
+  password: z.string().min(8).max(100),
+  firstName: z.string().trim().max(50).optional().default(""),
+  lastName: z.string().trim().max(50).optional().default(""),
+});
+
+export const loginRequestSchema = z.object({
+  username: z.string().trim().min(1),
+  password: z.string().min(1),
+});
+
+export const authResponseSchema = z.object({
+  user: authUserSchema,
+});
+
 export type GamesQuery = z.infer<typeof gamesQuerySchema>;
 export type Genre = z.infer<typeof genreSchema>;
 export type Platform = z.infer<typeof platformSchema>;
 export type GameListItem = z.infer<typeof gameListItemSchema>;
 export type GameListResponse = z.infer<typeof gameListResponseSchema>;
 export type GameDetail = z.infer<typeof gameDetailSchema>;
+export type AuthUser = z.infer<typeof authUserSchema>;
+export type RegisterRequest = z.infer<typeof registerRequestSchema>;
+export type LoginRequest = z.infer<typeof loginRequestSchema>;
+export type AuthResponse = z.infer<typeof authResponseSchema>;

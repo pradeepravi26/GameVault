@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Gamepad2 } from "lucide-react";
+import { AuthStatus } from "@/components/auth-status";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -33,7 +34,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="h-9 w-9 rounded-full border bg-muted" />
+        <AuthStatus />
       </div>
     </header>
   );

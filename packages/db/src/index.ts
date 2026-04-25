@@ -5,3 +5,4 @@ export {
   getGenres,
   getPlatforms,
 } from "./queries/catalog";
+export { createUser, findUserById, findUserByUsername } from "./queries/users";
