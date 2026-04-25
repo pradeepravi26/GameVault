@@ -16,6 +16,7 @@ const optionalTrimmedString = z.preprocess((value) => {
 }, z.string().min(1).optional());
 
 export const gamesSortSchema = z.enum(["title", "releaseDate", "averageScore"]);
+export const gamesSortDirectionSchema = z.enum(["asc", "desc"]);
 
 export const gamesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -32,6 +33,7 @@ export const gamesQuerySchema = z.object({
     return trimmed === "" ? undefined : trimmed;
   }, z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()),
   sort: gamesSortSchema.default("title"),
+  direction: gamesSortDirectionSchema.default("asc"),
 });
 
 export const genreSchema = z.object({

@@ -47,9 +47,9 @@ interface GameDetailRow extends RowDataPacket {
 }
 
 const GAME_SORT_SQL: Record<GamesQuery["sort"], string> = {
-  title: "g.title ASC",
-  releaseDate: "firstReleaseDate ASC, g.title ASC",
-  averageScore: "averageScore DESC, g.title ASC",
+  title: "g.title",
+  releaseDate: "firstReleaseDate",
+  averageScore: "averageScore",
 };
 
 function buildGamesFilterSql(query: GamesQuery) {
@@ -142,6 +142,13 @@ export async function getGames(rawQuery: Record<string, string | undefined>) {
   const query = gamesQuerySchema.parse(rawQuery);
   const offset = (query.page - 1) * query.pageSize;
   const { joinSql, whereSql, values } = buildGamesFilterSql(query);
+  const primaryDirection = query.direction.toUpperCase();
+  const secondaryDirection =
+    query.sort === "averageScore" && query.direction === "asc" ? "ASC" : "DESC";
+  const orderBySql =
+    query.sort === "averageScore"
+      ? `${GAME_SORT_SQL[query.sort]} IS NULL ASC, ${GAME_SORT_SQL[query.sort]} ${primaryDirection}, g.title ASC`
+      : `${GAME_SORT_SQL[query.sort]} ${primaryDirection}, g.title ${secondaryDirection}`;
 
   const [countRows] = await dbPool.query<GameCountRow[]>(
     `
@@ -174,7 +181,7 @@ export async function getGames(rawQuery: Record<string, string | undefined>) {
         ON r.rating_id = ns.rating_id
       ${whereSql}
       GROUP BY g.game_id, g.title, gi.image_url
-      ORDER BY ${GAME_SORT_SQL[query.sort]}
+      ORDER BY ${orderBySql}
       LIMIT ? OFFSET ?
     `,
     [...values, query.pageSize, offset],

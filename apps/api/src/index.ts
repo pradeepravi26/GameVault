@@ -1,11 +1,18 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { gamesRoute } from "./routes/games";
 import { genresRoute } from "./routes/genres";
 import { healthRoute } from "./routes/health";
 import { platformsRoute } from "./routes/platforms";
 
 const app = new Hono();
+app.use(
+  "*",
+  cors({
+    origin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
+  }),
+);
 app.route("/", healthRoute);
 app.route("/", genresRoute);
 app.route("/", platformsRoute);

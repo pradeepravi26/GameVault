@@ -12,6 +12,7 @@ gamesRoute.get("/games", async (c) => {
     platform: c.req.query("platform"),
     releasedAfter: c.req.query("releasedAfter"),
     sort: c.req.query("sort"),
+    direction: c.req.query("direction"),
   });
 
   return c.json(result, 200);
