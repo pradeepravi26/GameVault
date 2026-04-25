@@ -13,6 +13,9 @@ importers:
       '@gamevault/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@gamevault/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@hono/node-server':
         specifier: ^1.19.14
         version: 1.19.14(hono@4.12.15)
@@ -110,6 +113,9 @@ importers:
         specifier: ^3.22.2
         version: 3.22.2(@types/node@20.19.39)
     devDependencies:
+      '@types/node':
+        specifier: ^20.19.39
+        version: 20.19.39
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10

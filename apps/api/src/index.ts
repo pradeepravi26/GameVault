@@ -1,12 +1,15 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { healthResponseSchema } from "@gamevault/contracts";
+import { gamesRoute } from "./routes/games";
+import { genresRoute } from "./routes/genres";
+import { healthRoute } from "./routes/health";
+import { platformsRoute } from "./routes/platforms";
 
 const app = new Hono();
-
-app.get("/health", (c) => {
-  return c.json(healthResponseSchema.parse({ ok: true }));
-});
+app.route("/", healthRoute);
+app.route("/", genresRoute);
+app.route("/", platformsRoute);
+app.route("/", gamesRoute);
 
 const port = Number(process.env.PORT ?? 3001);
 
