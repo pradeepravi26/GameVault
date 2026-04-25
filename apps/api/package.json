@@ -1,0 +1,21 @@
+{
+  "name": "@gamevault/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "dependencies": {
+    "@gamevault/contracts": "workspace:*",
+    "@hono/node-server": "^1.19.14",
+    "hono": "^4.12.15"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
