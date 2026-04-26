@@ -71,6 +71,34 @@ export const gameDetailSchema = z.object({
   ratingCount: z.number().int().min(0),
 });
 
+export const gameReviewSchema = z.object({
+  ratingId: z.number().int(),
+  postedAt: z.string(),
+  userId: z.number().int(),
+  username: z.string(),
+  score: z.number().min(1).max(10).nullable(),
+  reviewBody: z.string().nullable(),
+  isSpoiler: z.boolean(),
+});
+
+export const gameReviewsResponseSchema = z.object({
+  reviews: z.array(gameReviewSchema),
+});
+
+export const myGameReviewResponseSchema = z.object({
+  review: gameReviewSchema.nullable(),
+});
+
+export const upsertGameReviewRequestSchema = z.object({
+  score: z.coerce.number().min(1).max(10),
+  reviewBody: z.string().trim().max(5000).optional().default(""),
+  isSpoiler: z.boolean().optional().default(false),
+});
+
+export const deleteReviewResponseSchema = z.object({
+  ok: z.boolean(),
+});
+
 export const authUserSchema = z.object({
   userId: z.number().int(),
   username: z.string(),
@@ -100,7 +128,11 @@ export type Platform = z.infer<typeof platformSchema>;
 export type GameListItem = z.infer<typeof gameListItemSchema>;
 export type GameListResponse = z.infer<typeof gameListResponseSchema>;
 export type GameDetail = z.infer<typeof gameDetailSchema>;
+export type GameReview = z.infer<typeof gameReviewSchema>;
 export type AuthUser = z.infer<typeof authUserSchema>;
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;
+export type GameReviewsResponse = z.infer<typeof gameReviewsResponseSchema>;
+export type MyGameReviewResponse = z.infer<typeof myGameReviewResponseSchema>;
+export type UpsertGameReviewRequest = z.infer<typeof upsertGameReviewRequestSchema>;

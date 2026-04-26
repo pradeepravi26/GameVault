@@ -1,11 +1,14 @@
 import type {
   AuthResponse,
+  GameReviewsResponse,
   GameDetail,
+  MyGameReviewResponse,
   GameListResponse,
   LoginRequest,
   Genre,
   Platform,
   RegisterRequest,
+  UpsertGameReviewRequest,
 } from "@gamevault/contracts";
 
 const apiBaseUrl =
@@ -59,6 +62,37 @@ export function getGames(params?: Record<string, string | number | undefined>) {
 
 export function getGameById(gameId: number) {
   return fetchJson<GameDetail>(`/games/${gameId}`);
+}
+
+export function getReviewsForGame(gameId: number) {
+  return fetchJson<GameReviewsResponse>(`/games/${gameId}/reviews`);
+}
+
+export function getMyReviewForGame(gameId: number) {
+  return fetchJsonWithInit<MyGameReviewResponse>(`/games/${gameId}/my-review`, {
+    credentials: "include",
+  });
+}
+
+export function upsertReviewForGame(
+  gameId: number,
+  input: UpsertGameReviewRequest,
+) {
+  return fetchJsonWithInit<MyGameReviewResponse>(`/games/${gameId}/reviews`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteReview(ratingId: number) {
+  return fetchJsonWithInit<{ ok: true }>(`/reviews/${ratingId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
 }
 
 export function getGenres() {

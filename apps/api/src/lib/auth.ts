@@ -1,5 +1,6 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
+import { getCookie } from "hono/cookie";
 import type { AuthUser } from "@gamevault/contracts";
 import { findUserById } from "@gamevault/db";
 
@@ -98,4 +99,8 @@ export async function getUserFromSession(sessionId: string | undefined) {
   }
 
   return toAuthUser(user);
+}
+
+export async function getRequestUser(c: Parameters<typeof getCookie>[0]) {
+  return getUserFromSession(getCookie(c, SESSION_COOKIE_NAME));
 }
