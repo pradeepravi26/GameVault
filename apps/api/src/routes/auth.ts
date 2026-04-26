@@ -57,7 +57,7 @@ authRoute.post("/auth/register", async (c) => {
     return c.json({ error: "Unable to create user." }, 500);
   }
 
-  const sessionId = createSession(createdUser.userId);
+  const sessionId = await createSession(createdUser.userId);
   setSessionCookie(c, sessionId);
 
   return c.json(authResponseSchema.parse({ user: toAuthUser(createdUser) }), 201);
@@ -78,7 +78,7 @@ authRoute.post("/auth/login", async (c) => {
     return c.json({ error: "Invalid username or password." }, 401);
   }
 
-  const sessionId = createSession(user.userId);
+  const sessionId = await createSession(user.userId);
   setSessionCookie(c, sessionId);
 
   return c.json(authResponseSchema.parse({ user: toAuthUser(user) }), 200);
@@ -86,7 +86,7 @@ authRoute.post("/auth/login", async (c) => {
 
 authRoute.post("/auth/logout", async (c) => {
   const sessionId = getCookie(c, sessionCookieName);
-  deleteSession(sessionId);
+  await deleteSession(sessionId);
   clearSessionCookie(c);
   return c.json({ ok: true }, 200);
 });

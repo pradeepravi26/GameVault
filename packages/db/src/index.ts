@@ -12,6 +12,12 @@ export {
   getUserProfileById,
 } from "./queries/users";
 export {
+  createSessionRecord,
+  deleteExpiredSessions,
+  deleteSessionRecord,
+  findSessionById,
+} from "./queries/sessions";
+export {
   addOrUpdateReview,
   deleteReviewById,
   getReviewsForGame,

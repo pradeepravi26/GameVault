@@ -12,6 +12,13 @@ CREATE TABLE users (
     last_name VARCHAR(50)
 );
 
+CREATE TABLE sessions (
+    session_id CHAR(64) PRIMARY KEY,
+    user_id INT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    CONSTRAINT fk_sessions_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
 CREATE TABLE games (
     game_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL
@@ -118,6 +125,10 @@ CREATE INDEX idx_ratings_user_id ON ratings(user_id);
 CREATE INDEX idx_collections_user_id ON collections(user_id);
 
 CREATE INDEX idx_collection_likes_user_id ON collection_likes(user_id);
+
+CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+
+CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
 
 CREATE INDEX idx_game_release_dates_release_date ON game_release_dates(release_date);
 

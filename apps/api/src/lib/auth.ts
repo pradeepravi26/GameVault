@@ -2,18 +2,17 @@ import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:cry
 import { promisify } from "node:util";
 import { getCookie } from "hono/cookie";
 import type { AuthUser } from "@gamevault/contracts";
-import { findUserById } from "@gamevault/db";
+import {
+  createSessionRecord,
+  deleteExpiredSessions,
+  deleteSessionRecord,
+  findSessionById,
+  findUserById,
+} from "@gamevault/db";
 
 const scrypt = promisify(scryptCallback);
 const SESSION_COOKIE_NAME = "gamevault_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7;
-
-interface SessionRecord {
-  userId: number;
-  expiresAt: number;
-}
-
-const sessionStore = new Map<string, SessionRecord>();
 
 export function toAuthUser(user: {
   userId: number;
@@ -52,12 +51,14 @@ export async function verifyPassword(password: string, passwordHash: string) {
   return timingSafeEqual(storedKey, derivedKey);
 }
 
-export function createSession(userId: number) {
+export async function createSession(userId: number) {
   const sessionId = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
 
-  sessionStore.set(sessionId, {
+  await createSessionRecord({
+    sessionId,
     userId,
-    expiresAt: Date.now() + SESSION_DURATION_MS,
+    expiresAt,
   });
 
   return sessionId;
@@ -67,12 +68,12 @@ export function getSessionCookieName() {
   return SESSION_COOKIE_NAME;
 }
 
-export function deleteSession(sessionId: string | undefined) {
+export async function deleteSession(sessionId: string | undefined) {
   if (!sessionId) {
     return;
   }
 
-  sessionStore.delete(sessionId);
+  await deleteSessionRecord(sessionId);
 }
 
 export async function getUserFromSession(sessionId: string | undefined) {
@@ -80,21 +81,23 @@ export async function getUserFromSession(sessionId: string | undefined) {
     return null;
   }
 
-  const session = sessionStore.get(sessionId);
+  await deleteExpiredSessions();
+
+  const session = await findSessionById(sessionId);
 
   if (!session) {
     return null;
   }
 
-  if (session.expiresAt <= Date.now()) {
-    sessionStore.delete(sessionId);
+  if (new Date(session.expiresAt).getTime() <= Date.now()) {
+    await deleteSessionRecord(sessionId);
     return null;
   }
 
   const user = await findUserById(session.userId);
 
   if (!user) {
-    sessionStore.delete(sessionId);
+    await deleteSessionRecord(sessionId);
     return null;
   }
 
