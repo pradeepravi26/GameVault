@@ -158,8 +158,8 @@ export default function GameDetailPage() {
         ) : isLoading ? (
           <div className="space-y-6">
             <div className="h-10 w-64 rounded-md bg-muted" />
-            <div className="grid gap-6 md:grid-cols-[280px_1fr]">
-              <div className="h-[360px] rounded-lg border bg-muted" />
+            <div className="grid gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+              <div className="h-[420px] rounded-lg border bg-muted" />
               <div className="space-y-4">
                 <div className="h-5 w-40 rounded-md bg-muted" />
                 <div className="h-5 w-56 rounded-md bg-muted" />
@@ -182,20 +182,20 @@ export default function GameDetailPage() {
               </h1>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-[280px_1fr]">
+            <div className="grid gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
               <div className="overflow-hidden rounded-lg border bg-card">
                 {game.imageUrl ? (
                   <img
                     src={game.imageUrl}
                     alt={game.title}
-                    className="h-full w-full object-cover"
+                    className="h-[420px] w-full object-cover"
                   />
                 ) : (
-                  <div className="h-[360px] bg-muted" />
+                  <div className="h-[420px] bg-muted" />
                 )}
               </div>
 
-              <div className="space-y-6 rounded-lg border p-6">
+              <div className="space-y-6 rounded-lg border p-6 md:max-w-md">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Star className="h-4 w-4" />
                   <span>
@@ -247,10 +247,6 @@ export default function GameDetailPage() {
                       </span>
                     )}
                   </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <Button disabled={!currentUser}>Add Review</Button>
                 </div>
 
                 <div className="space-y-3 rounded-md border p-4">
@@ -350,7 +346,7 @@ export default function GameDetailPage() {
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="space-y-6">
               <section className="space-y-4 rounded-lg border p-6">
                 <div className="space-y-1">
                   <h2 className="text-xl font-semibold">Your Review</h2>
@@ -516,7 +512,13 @@ export default function GameDetailPage() {
                         <p className="text-xs text-muted-foreground">
                           {review.postedAt}
                         </p>
-                        <p className="text-sm">
+                        <p
+                          className={
+                            review.isSpoiler
+                              ? "text-sm break-words whitespace-pre-wrap blur-sm transition hover:blur-none"
+                              : "text-sm break-words whitespace-pre-wrap"
+                          }
+                        >
                           {review.reviewBody?.trim()
                             ? review.reviewBody
                             : "No written review provided."}
