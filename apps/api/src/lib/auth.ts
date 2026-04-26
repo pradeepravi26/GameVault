@@ -1,0 +1,109 @@
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
+import { getCookie } from "hono/cookie";
+import type { AuthUser } from "@gamevault/contracts";
+import {
+  createSessionRecord,
+  deleteExpiredSessions,
+  deleteSessionRecord,
+  findSessionById,
+  findUserById,
+} from "@gamevault/db";
+
+const scrypt = promisify(scryptCallback);
+const SESSION_COOKIE_NAME = "gamevault_session";
+const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7;
+
+export function toAuthUser(user: {
+  userId: number;
+  username: string;
+  firstName: string | null;
+  lastName: string | null;
+}) {
+  return {
+    userId: user.userId,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+  } satisfies AuthUser;
+}
+
+export async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
+  return `${salt}:${derivedKey.toString("hex")}`;
+}
+
+export async function verifyPassword(password: string, passwordHash: string) {
+  const [salt, key] = passwordHash.split(":");
+
+  if (!salt || !key) {
+    return false;
+  }
+
+  const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
+  const storedKey = Buffer.from(key, "hex");
+
+  if (storedKey.length !== derivedKey.length) {
+    return false;
+  }
+
+  return timingSafeEqual(storedKey, derivedKey);
+}
+
+export async function createSession(userId: number) {
+  const sessionId = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+
+  await createSessionRecord({
+    sessionId,
+    userId,
+    expiresAt,
+  });
+
+  return sessionId;
+}
+
+export function getSessionCookieName() {
+  return SESSION_COOKIE_NAME;
+}
+
+export async function deleteSession(sessionId: string | undefined) {
+  if (!sessionId) {
+    return;
+  }
+
+  await deleteSessionRecord(sessionId);
+}
+
+export async function getUserFromSession(sessionId: string | undefined) {
+  if (!sessionId) {
+    return null;
+  }
+
+  await deleteExpiredSessions();
+
+  const session = await findSessionById(sessionId);
+
+  if (!session) {
+    return null;
+  }
+
+  if (new Date(session.expiresAt).getTime() <= Date.now()) {
+    await deleteSessionRecord(sessionId);
+    return null;
+  }
+
+  const user = await findUserById(session.userId);
+
+  if (!user) {
+    await deleteSessionRecord(sessionId);
+    return null;
+  }
+
+  return toAuthUser(user);
+}
+
+export async function getRequestUser(c: Parameters<typeof getCookie>[0]) {
+  return getUserFromSession(getCookie(c, SESSION_COOKIE_NAME));
+}
