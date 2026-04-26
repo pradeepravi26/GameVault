@@ -18,20 +18,24 @@ import {
 
 const sessionCookieName = getSessionCookieName();
 
-function setSessionCookie(c: Parameters<typeof setCookie>[0], sessionId: string) {
-  setCookie(c, sessionCookieName, sessionId, {
+function getSessionCookieOptions() {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
     httpOnly: true,
-    sameSite: "Lax",
+    sameSite: isProduction ? ("None" as const) : ("Lax" as const),
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
-    secure: process.env.NODE_ENV === "production",
-  });
+    secure: isProduction,
+  };
+}
+
+function setSessionCookie(c: Parameters<typeof setCookie>[0], sessionId: string) {
+  setCookie(c, sessionCookieName, sessionId, getSessionCookieOptions());
 }
 
 function clearSessionCookie(c: Parameters<typeof deleteCookie>[0]) {
-  deleteCookie(c, sessionCookieName, {
-    path: "/",
-  });
+  deleteCookie(c, sessionCookieName, getSessionCookieOptions());
 }
 
 export const authRoute = new Hono();
