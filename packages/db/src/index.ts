@@ -12,3 +12,17 @@ export {
   getReviewsForGame,
   getUserReviewForGame,
 } from "./queries/reviews";
+export {
+  addGameToCollection,
+  createCollection,
+  deleteCollection,
+  getAllCollections,
+  getCollectionById,
+  getCollectionDetail,
+  getCollectionsForUser,
+  getGamesForCollection,
+  hasUserLikedCollection,
+  likeCollection,
+  removeGameFromCollection,
+  renameCollection,
+} from "./queries/collections";

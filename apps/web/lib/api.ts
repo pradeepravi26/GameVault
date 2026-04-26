@@ -1,5 +1,9 @@
 import type {
+  AddGameToCollectionRequest,
   AuthResponse,
+  CollectionDetail,
+  CollectionListResponse,
+  CreateCollectionRequest,
   GameReviewsResponse,
   GameDetail,
   MyGameReviewResponse,
@@ -8,6 +12,7 @@ import type {
   Genre,
   Platform,
   RegisterRequest,
+  UpdateCollectionRequest,
   UpsertGameReviewRequest,
 } from "@gamevault/contracts";
 
@@ -134,6 +139,81 @@ export function logout() {
 
 export function getCurrentUser() {
   return fetchJsonWithInit<AuthResponse>("/auth/me", {
+    credentials: "include",
+  });
+}
+
+export function getCollections() {
+  return fetchJson<CollectionListResponse>("/collections");
+}
+
+export function getCollectionsForUser(userId: number) {
+  return fetchJson<CollectionListResponse>(`/users/${userId}/collections`);
+}
+
+export function getCollectionById(collectionId: number) {
+  return fetchJson<CollectionDetail>(`/collections/${collectionId}`);
+}
+
+export function createCollection(input: CreateCollectionRequest) {
+  return fetchJsonWithInit<CollectionDetail>("/collections", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export function renameCollection(
+  collectionId: number,
+  input: UpdateCollectionRequest,
+) {
+  return fetchJsonWithInit<CollectionDetail>(`/collections/${collectionId}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteCollectionById(collectionId: number) {
+  return fetchJsonWithInit<{ ok: true }>(`/collections/${collectionId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+}
+
+export function addGameToCollection(
+  collectionId: number,
+  input: AddGameToCollectionRequest,
+) {
+  return fetchJsonWithInit<CollectionDetail>(`/collections/${collectionId}/games`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export function removeGameFromCollection(collectionId: number, gameId: number) {
+  return fetchJsonWithInit<{ ok: true }>(
+    `/collections/${collectionId}/games/${gameId}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+    },
+  );
+}
+
+export function likeCollectionById(collectionId: number) {
+  return fetchJsonWithInit<CollectionDetail>(`/collections/${collectionId}/like`, {
+    method: "POST",
     credentials: "include",
   });
 }

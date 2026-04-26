@@ -99,6 +99,50 @@ export const deleteReviewResponseSchema = z.object({
   ok: z.boolean(),
 });
 
+export const collectionSummarySchema = z.object({
+  collectionId: z.number().int(),
+  collectionName: z.string(),
+  userId: z.number().int(),
+  username: z.string(),
+  likeCount: z.number().int().min(0),
+  gameCount: z.number().int().min(0),
+});
+
+export const collectionGameSchema = z.object({
+  gameId: z.number().int(),
+  title: z.string(),
+  imageUrl: z.string().nullable(),
+  firstReleaseDate: z.string().nullable(),
+});
+
+export const collectionDetailSchema = collectionSummarySchema.extend({
+  games: z.array(collectionGameSchema),
+});
+
+export const collectionListResponseSchema = z.object({
+  collections: z.array(collectionSummarySchema),
+});
+
+export const myCollectionsResponseSchema = z.object({
+  collections: z.array(collectionSummarySchema),
+});
+
+export const createCollectionRequestSchema = z.object({
+  collectionName: z.string().trim().min(1).max(100),
+});
+
+export const updateCollectionRequestSchema = z.object({
+  collectionName: z.string().trim().min(1).max(100),
+});
+
+export const addGameToCollectionRequestSchema = z.object({
+  gameId: z.number().int().positive(),
+});
+
+export const mutationSuccessSchema = z.object({
+  ok: z.boolean(),
+});
+
 export const authUserSchema = z.object({
   userId: z.number().int(),
   username: z.string(),
@@ -136,3 +180,11 @@ export type AuthResponse = z.infer<typeof authResponseSchema>;
 export type GameReviewsResponse = z.infer<typeof gameReviewsResponseSchema>;
 export type MyGameReviewResponse = z.infer<typeof myGameReviewResponseSchema>;
 export type UpsertGameReviewRequest = z.infer<typeof upsertGameReviewRequestSchema>;
+export type CollectionSummary = z.infer<typeof collectionSummarySchema>;
+export type CollectionGame = z.infer<typeof collectionGameSchema>;
+export type CollectionDetail = z.infer<typeof collectionDetailSchema>;
+export type CollectionListResponse = z.infer<typeof collectionListResponseSchema>;
+export type MyCollectionsResponse = z.infer<typeof myCollectionsResponseSchema>;
+export type CreateCollectionRequest = z.infer<typeof createCollectionRequestSchema>;
+export type UpdateCollectionRequest = z.infer<typeof updateCollectionRequestSchema>;
+export type AddGameToCollectionRequest = z.infer<typeof addGameToCollectionRequestSchema>;

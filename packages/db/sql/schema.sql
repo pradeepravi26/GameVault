@@ -30,10 +30,8 @@ CREATE TABLE platforms (
 CREATE TABLE collections (
     collection_id INT AUTO_INCREMENT PRIMARY KEY,
     collection_name VARCHAR(100) NOT NULL,
-    like_count INT NOT NULL DEFAULT 0,
     user_id INT NOT NULL,
     CONSTRAINT uq_collections_user_name UNIQUE (user_id, collection_name),
-    CONSTRAINT chk_collections_like_count CHECK (like_count >= 0),
     CONSTRAINT fk_collections_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -87,6 +85,14 @@ CREATE TABLE collection_games (
     CONSTRAINT fk_collection_games_game FOREIGN KEY (game_id) REFERENCES games(game_id) ON DELETE CASCADE
 );
 
+CREATE TABLE collection_likes (
+    collection_id INT NOT NULL,
+    user_id INT NOT NULL,
+    PRIMARY KEY (collection_id, user_id),
+    CONSTRAINT fk_collection_likes_collection FOREIGN KEY (collection_id) REFERENCES collections(collection_id) ON DELETE CASCADE,
+    CONSTRAINT fk_collection_likes_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
 CREATE TABLE game_genres (
     game_id INT NOT NULL,
     genre_id INT NOT NULL,
@@ -110,6 +116,8 @@ CREATE INDEX idx_ratings_game_id ON ratings(game_id);
 CREATE INDEX idx_ratings_user_id ON ratings(user_id);
 
 CREATE INDEX idx_collections_user_id ON collections(user_id);
+
+CREATE INDEX idx_collection_likes_user_id ON collection_likes(user_id);
 
 CREATE INDEX idx_game_release_dates_release_date ON game_release_dates(release_date);
 

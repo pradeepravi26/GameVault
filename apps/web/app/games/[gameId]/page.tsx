@@ -3,13 +3,26 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { AuthUser, GameDetail, GameReview } from "@gamevault/contracts";
+import type {
+  AuthUser,
+  CollectionSummary,
+  GameDetail,
+  GameReview,
+} from "@gamevault/contracts";
 import { ArrowLeft, Star, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  addGameToCollection,
   deleteReview,
+  getCollectionsForUser,
   getCurrentUser,
   getGameById,
   getMyReviewForGame,
@@ -24,13 +37,18 @@ export default function GameDetailPage() {
   const [game, setGame] = useState<GameDetail | null>(null);
   const [reviews, setReviews] = useState<GameReview[]>([]);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [collections, setCollections] = useState<CollectionSummary[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState("");
   const [myReview, setMyReview] = useState<GameReview | null>(null);
   const [score, setScore] = useState("8");
   const [reviewBody, setReviewBody] = useState("");
   const [isSpoiler, setIsSpoiler] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [isAddingToCollection, setIsAddingToCollection] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [collectionError, setCollectionError] = useState<string | null>(null);
+  const [collectionMessage, setCollectionMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,19 +76,30 @@ export default function GameDetailPage() {
         }
 
         if (authResponse?.user) {
-          const myReviewResponse = await getMyReviewForGame(gameId);
+          const [myReviewResponse, collectionsResponse] = await Promise.all([
+            getMyReviewForGame(gameId),
+            getCollectionsForUser(authResponse.user.userId),
+          ]);
 
           if (!cancelled) {
             setMyReview(myReviewResponse.review);
             setScore(String(myReviewResponse.review?.score ?? 8));
             setReviewBody(myReviewResponse.review?.reviewBody ?? "");
             setIsSpoiler(myReviewResponse.review?.isSpoiler ?? false);
+            setCollections(collectionsResponse.collections);
+            setSelectedCollectionId(
+              collectionsResponse.collections[0]
+                ? String(collectionsResponse.collections[0].collectionId)
+                : "",
+            );
           }
         } else if (!cancelled) {
           setMyReview(null);
           setScore("8");
           setReviewBody("");
           setIsSpoiler(false);
+          setCollections([]);
+          setSelectedCollectionId("");
         }
       } catch (caughtError) {
         if (!cancelled) {
@@ -222,9 +251,101 @@ export default function GameDetailPage() {
 
                 <div className="flex flex-wrap gap-3">
                   <Button disabled={!currentUser}>Add Review</Button>
-                  <Button variant="outline" disabled>
-                    Add to Collection
-                  </Button>
+                </div>
+
+                <div className="space-y-3 rounded-md border p-4">
+                  <div className="space-y-1">
+                    <h2 className="text-sm font-medium text-muted-foreground">
+                      Add to collection
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Save this game to one of your collections.
+                    </p>
+                  </div>
+
+                  {currentUser ? (
+                    collections.length > 0 ? (
+                      <>
+                        <Select
+                          value={selectedCollectionId}
+                          onValueChange={setSelectedCollectionId}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Choose a collection" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {collections.map((collection) => (
+                              <SelectItem
+                                key={collection.collectionId}
+                                value={String(collection.collectionId)}
+                              >
+                                {collection.collectionName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Button
+                          variant="outline"
+                          disabled={!selectedCollectionId || isAddingToCollection}
+                          onClick={async () => {
+                            setCollectionError(null);
+                            setCollectionMessage(null);
+                            setIsAddingToCollection(true);
+
+                            try {
+                              await addGameToCollection(Number(selectedCollectionId), {
+                                gameId,
+                              });
+                              setCollectionMessage("Game added to collection.");
+                            } catch (caughtError) {
+                              setCollectionError(
+                                caughtError instanceof Error
+                                  ? caughtError.message
+                                  : "Unable to add game to collection.",
+                              );
+                            } finally {
+                              setIsAddingToCollection(false);
+                            }
+                          }}
+                        >
+                          {isAddingToCollection
+                            ? "Adding..."
+                            : "Add to Collection"}
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="rounded-md border p-3 text-sm text-muted-foreground">
+                        You do not have any collections yet.{" "}
+                        <Link
+                          href="/collections"
+                          className="underline underline-offset-4"
+                        >
+                          Create one first
+                        </Link>
+                        .
+                      </div>
+                    )
+                  ) : (
+                    <div className="rounded-md border p-3 text-sm text-muted-foreground">
+                      <Link href="/login" className="underline underline-offset-4">
+                        Login
+                      </Link>{" "}
+                      to add this game to one of your collections.
+                    </div>
+                  )}
+
+                  {collectionError ? (
+                    <div className="rounded-md border border-destructive/30 p-3 text-sm text-destructive">
+                      {collectionError}
+                    </div>
+                  ) : null}
+
+                  {collectionMessage ? (
+                    <div className="rounded-md border p-3 text-sm">
+                      {collectionMessage}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
