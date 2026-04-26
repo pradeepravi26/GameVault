@@ -20,7 +20,8 @@ export default function Home() {
         const response = await getGames({
           page: 1,
           pageSize: 6,
-          sort: "releaseDate",
+          sort: "averageScore",
+          direction: "desc",
         });
 
         if (!cancelled) {
