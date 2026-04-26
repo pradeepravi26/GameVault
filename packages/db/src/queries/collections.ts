@@ -18,6 +18,7 @@ interface CollectionSummaryRow extends RowDataPacket {
   username: string;
   likeCount: number;
   gameCount: number;
+  likedByCurrentUser: number;
 }
 
 interface CollectionGameRow extends RowDataPacket {
@@ -35,6 +36,7 @@ function normalizeCollectionSummary(row: CollectionSummaryRow) {
     username: row.username,
     likeCount: Number(row.likeCount),
     gameCount: Number(row.gameCount),
+    likedByCurrentUser: Boolean(row.likedByCurrentUser),
   } satisfies CollectionSummary);
 }
 
@@ -47,7 +49,7 @@ function normalizeCollectionGame(row: CollectionGameRow) {
   } satisfies CollectionGame);
 }
 
-export async function getAllCollections() {
+export async function getAllCollections(currentUserId?: number) {
   const [rows] = await dbPool.query<CollectionSummaryRow[]>(
     `
       SELECT
@@ -56,7 +58,8 @@ export async function getAllCollections() {
         u.user_id AS userId,
         u.username,
         COUNT(DISTINCT cl.user_id) AS likeCount,
-        COUNT(DISTINCT cg.game_id) AS gameCount
+        COUNT(DISTINCT cg.game_id) AS gameCount,
+        MAX(CASE WHEN cl.user_id = ? THEN 1 ELSE 0 END) AS likedByCurrentUser
       FROM collections AS c
       JOIN users AS u
         ON c.user_id = u.user_id
@@ -67,6 +70,7 @@ export async function getAllCollections() {
       GROUP BY c.collection_id, c.collection_name, u.user_id, u.username
       ORDER BY likeCount DESC, c.collection_name ASC
     `,
+    [currentUserId ?? -1],
   );
 
   return collectionListResponseSchema.parse({
@@ -74,7 +78,7 @@ export async function getAllCollections() {
   }).collections;
 }
 
-export async function getCollectionsForUser(userId: number) {
+export async function getCollectionsForUser(userId: number, currentUserId?: number) {
   const [rows] = await dbPool.query<CollectionSummaryRow[]>(
     `
       SELECT
@@ -83,7 +87,8 @@ export async function getCollectionsForUser(userId: number) {
         u.user_id AS userId,
         u.username,
         COUNT(DISTINCT cl.user_id) AS likeCount,
-        COUNT(DISTINCT cg.game_id) AS gameCount
+        COUNT(DISTINCT cg.game_id) AS gameCount,
+        MAX(CASE WHEN cl.user_id = ? THEN 1 ELSE 0 END) AS likedByCurrentUser
       FROM collections AS c
       JOIN users AS u
         ON c.user_id = u.user_id
@@ -95,7 +100,7 @@ export async function getCollectionsForUser(userId: number) {
       GROUP BY c.collection_id, c.collection_name, u.user_id, u.username
       ORDER BY c.collection_name ASC
     `,
-    [userId],
+    [currentUserId ?? -1, userId],
   );
 
   return myCollectionsResponseSchema.parse({
@@ -103,7 +108,7 @@ export async function getCollectionsForUser(userId: number) {
   }).collections;
 }
 
-export async function getCollectionById(collectionId: number) {
+export async function getCollectionById(collectionId: number, currentUserId?: number) {
   const [rows] = await dbPool.query<CollectionSummaryRow[]>(
     `
       SELECT
@@ -112,7 +117,8 @@ export async function getCollectionById(collectionId: number) {
         u.user_id AS userId,
         u.username,
         COUNT(DISTINCT cl.user_id) AS likeCount,
-        COUNT(DISTINCT cg.game_id) AS gameCount
+        COUNT(DISTINCT cg.game_id) AS gameCount,
+        MAX(CASE WHEN cl.user_id = ? THEN 1 ELSE 0 END) AS likedByCurrentUser
       FROM collections AS c
       JOIN users AS u
         ON c.user_id = u.user_id
@@ -124,7 +130,7 @@ export async function getCollectionById(collectionId: number) {
       GROUP BY c.collection_id, c.collection_name, u.user_id, u.username
       LIMIT 1
     `,
-    [collectionId],
+    [currentUserId ?? -1, collectionId],
   );
 
   const row = rows[0];
@@ -157,8 +163,8 @@ export async function getGamesForCollection(collectionId: number) {
   return rows.map(normalizeCollectionGame);
 }
 
-export async function getCollectionDetail(collectionId: number) {
-  const collection = await getCollectionById(collectionId);
+export async function getCollectionDetail(collectionId: number, currentUserId?: number) {
+  const collection = await getCollectionById(collectionId, currentUserId);
 
   if (!collection) {
     return null;
@@ -283,4 +289,20 @@ export async function hasUserLikedCollection(input: {
   );
 
   return rows.length > 0;
+}
+
+export async function unlikeCollection(input: {
+  collectionId: number;
+  userId: number;
+}) {
+  const [result] = await dbPool.execute<ResultSetHeader>(
+    `
+      DELETE FROM collection_likes
+      WHERE collection_id = ?
+        AND user_id = ?
+    `,
+    [input.collectionId, input.userId],
+  );
+
+  return result.affectedRows > 0;
 }

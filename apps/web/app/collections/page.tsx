@@ -233,8 +233,13 @@ export default function CollectionsPage() {
                 </div>
 
                 <Button
-                  variant="outline"
+                  variant={collection.likedByCurrentUser ? "default" : "outline"}
                   size="sm"
+                  className={
+                    collection.likedByCurrentUser
+                      ? "border-rose-500 bg-rose-500 text-white hover:bg-rose-500/90"
+                      : undefined
+                  }
                   disabled={!currentUser}
                   onClick={async () => {
                     setError(null);
@@ -251,8 +256,14 @@ export default function CollectionsPage() {
                     }
                   }}
                 >
-                  <Heart className="h-4 w-4" />
-                  Like
+                  <Heart
+                    className={
+                      collection.likedByCurrentUser
+                        ? "h-4 w-4 fill-current"
+                        : "h-4 w-4"
+                    }
+                  />
+                  {collection.likedByCurrentUser ? "Liked" : "Like"}
                 </Button>
               </article>
             ))}

@@ -154,15 +154,21 @@ export function getReviewsByUser(userId: number) {
 }
 
 export function getCollections() {
-  return fetchJson<CollectionListResponse>("/collections");
+  return fetchJsonWithInit<CollectionListResponse>("/collections", {
+    credentials: "include",
+  });
 }
 
 export function getCollectionsForUser(userId: number) {
-  return fetchJson<CollectionListResponse>(`/users/${userId}/collections`);
+  return fetchJsonWithInit<CollectionListResponse>(`/users/${userId}/collections`, {
+    credentials: "include",
+  });
 }
 
 export function getCollectionById(collectionId: number) {
-  return fetchJson<CollectionDetail>(`/collections/${collectionId}`);
+  return fetchJsonWithInit<CollectionDetail>(`/collections/${collectionId}`, {
+    credentials: "include",
+  });
 }
 
 export function createCollection(input: CreateCollectionRequest) {

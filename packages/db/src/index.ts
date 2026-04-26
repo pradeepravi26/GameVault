@@ -31,4 +31,5 @@ export {
   likeCollection,
   removeGameFromCollection,
   renameCollection,
+  unlikeCollection,
 } from "./queries/collections";

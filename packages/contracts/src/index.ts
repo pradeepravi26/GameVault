@@ -106,6 +106,7 @@ export const collectionSummarySchema = z.object({
   username: z.string(),
   likeCount: z.number().int().min(0),
   gameCount: z.number().int().min(0),
+  likedByCurrentUser: z.boolean(),
 });
 
 export const collectionGameSchema = z.object({

@@ -11,6 +11,7 @@ import {
   likeCollection,
   removeGameFromCollection,
   renameCollection,
+  unlikeCollection,
 } from "@gamevault/db";
 import {
   addGameToCollectionRequestSchema,
@@ -26,7 +27,8 @@ import { getRequestUser } from "../lib/auth";
 export const collectionsRoute = new Hono();
 
 collectionsRoute.get("/collections", async (c) => {
-  const collections = await getAllCollections();
+  const user = await getRequestUser(c);
+  const collections = await getAllCollections(user?.userId);
   return c.json(collectionListResponseSchema.parse({ collections }), 200);
 });
 
@@ -37,7 +39,8 @@ collectionsRoute.get("/users/:userId/collections", async (c) => {
     return c.json({ error: "Invalid userId" }, 400);
   }
 
-  const collections = await getCollectionsForUser(userId);
+  const user = await getRequestUser(c);
+  const collections = await getCollectionsForUser(userId, user?.userId);
   return c.json(myCollectionsResponseSchema.parse({ collections }), 200);
 });
 
@@ -70,7 +73,8 @@ collectionsRoute.get("/collections/:collectionId", async (c) => {
     return c.json({ error: "Invalid collectionId" }, 400);
   }
 
-  const collection = await getCollectionDetail(collectionId);
+  const user = await getRequestUser(c);
+  const collection = await getCollectionDetail(collectionId, user?.userId);
 
   if (!collection) {
     return c.json({ error: "Collection not found." }, 404);
@@ -92,7 +96,7 @@ collectionsRoute.post("/collections/:collectionId/games", async (c) => {
     return c.json({ error: "Not authenticated." }, 401);
   }
 
-  const collection = await getCollectionById(collectionId);
+  const collection = await getCollectionById(collectionId, user.userId);
 
   if (!collection) {
     return c.json({ error: "Collection not found." }, 404);
@@ -114,7 +118,7 @@ collectionsRoute.post("/collections/:collectionId/games", async (c) => {
     return c.json({ error: "Unable to add game to collection." }, 400);
   }
 
-  const updatedCollection = await getCollectionDetail(collectionId);
+  const updatedCollection = await getCollectionDetail(collectionId, user.userId);
   return c.json(collectionDetailSchema.parse(updatedCollection), 200);
 });
 
@@ -183,7 +187,7 @@ collectionsRoute.patch("/collections/:collectionId", async (c) => {
       return c.json({ error: "Collection not found." }, 404);
     }
 
-    const detail = await getCollectionDetail(collection.collectionId);
+    const detail = await getCollectionDetail(collection.collectionId, user.userId);
     return c.json(collectionDetailSchema.parse(detail), 200);
   } catch {
     return c.json({ error: "Unable to rename collection." }, 400);
@@ -228,7 +232,7 @@ collectionsRoute.post("/collections/:collectionId/like", async (c) => {
     return c.json({ error: "Not authenticated." }, 401);
   }
 
-  const collection = await getCollectionById(collectionId);
+  const collection = await getCollectionById(collectionId, user.userId);
 
   if (!collection) {
     return c.json({ error: "Collection not found." }, 404);
@@ -240,14 +244,17 @@ collectionsRoute.post("/collections/:collectionId/like", async (c) => {
   });
 
   if (alreadyLiked) {
-    return c.json({ error: "Collection already liked." }, 409);
+    await unlikeCollection({
+      collectionId,
+      userId: user.userId,
+    });
+  } else {
+    await likeCollection({
+      collectionId,
+      userId: user.userId,
+    });
   }
 
-  await likeCollection({
-    collectionId,
-    userId: user.userId,
-  });
-
-  const detail = await getCollectionDetail(collectionId);
+  const detail = await getCollectionDetail(collectionId, user.userId);
   return c.json(collectionDetailSchema.parse(detail), 200);
 });

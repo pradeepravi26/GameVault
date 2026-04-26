@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { AuthUser, CollectionDetail } from "@gamevault/contracts";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Heart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -197,6 +197,7 @@ export default function CollectionDetailPage() {
                 </div>
 
                 <Button
+                  variant={collection.likedByCurrentUser ? "default" : "outline"}
                   disabled={!currentUser}
                   onClick={async () => {
                     setError(null);
@@ -213,7 +214,14 @@ export default function CollectionDetailPage() {
                     }
                   }}
                 >
-                  Like Collection
+                  <Heart
+                    className={
+                      collection.likedByCurrentUser
+                        ? "h-4 w-4 fill-current"
+                        : "h-4 w-4"
+                    }
+                  />
+                  {collection.likedByCurrentUser ? "Liked" : "Like Collection"}
                 </Button>
               </>
             )}
