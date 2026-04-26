@@ -150,6 +150,17 @@ export const authUserSchema = z.object({
   lastName: z.string().nullable(),
 });
 
+export const userProfileSchema = authUserSchema;
+
+export const userReviewSchema = gameReviewSchema.extend({
+  gameId: z.number().int(),
+  gameTitle: z.string(),
+});
+
+export const userReviewsResponseSchema = z.object({
+  reviews: z.array(userReviewSchema),
+});
+
 export const registerRequestSchema = z.object({
   username: z.string().trim().min(3).max(50),
   password: z.string().min(8).max(100),
@@ -174,10 +185,13 @@ export type GameListResponse = z.infer<typeof gameListResponseSchema>;
 export type GameDetail = z.infer<typeof gameDetailSchema>;
 export type GameReview = z.infer<typeof gameReviewSchema>;
 export type AuthUser = z.infer<typeof authUserSchema>;
+export type UserProfile = z.infer<typeof userProfileSchema>;
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;
 export type GameReviewsResponse = z.infer<typeof gameReviewsResponseSchema>;
+export type UserReview = z.infer<typeof userReviewSchema>;
+export type UserReviewsResponse = z.infer<typeof userReviewsResponseSchema>;
 export type MyGameReviewResponse = z.infer<typeof myGameReviewResponseSchema>;
 export type UpsertGameReviewRequest = z.infer<typeof upsertGameReviewRequestSchema>;
 export type CollectionSummary = z.infer<typeof collectionSummarySchema>;

@@ -3,6 +3,7 @@ import {
   gameReviewSchema,
   gameReviewsResponseSchema,
   myGameReviewResponseSchema,
+  userReviewsResponseSchema,
   type GameReview,
 } from "@gamevault/contracts";
 import { dbPool } from "../client/pool";
@@ -15,6 +16,11 @@ interface ReviewRow extends RowDataPacket {
   score: string | number | null;
   reviewBody: string | null;
   isSpoiler: number | boolean | null;
+}
+
+interface UserReviewRow extends ReviewRow {
+  gameId: number;
+  gameTitle: string;
 }
 
 function normalizeReview(row: ReviewRow) {
@@ -124,4 +130,49 @@ export async function deleteReviewById(input: { ratingId: number; userId: number
   );
 
   return result.affectedRows > 0;
+}
+
+export async function getReviewsByUser(userId: number) {
+  const [rows] = await dbPool.query<UserReviewRow[]>(
+    `
+      SELECT
+        r.rating_id AS ratingId,
+        DATE_FORMAT(r.posted_at, '%Y-%m-%d %H:%i:%s') AS postedAt,
+        u.user_id AS userId,
+        u.username,
+        g.game_id AS gameId,
+        g.title AS gameTitle,
+        ns.score,
+        rt.review_body AS reviewBody,
+        rt.is_spoiler AS isSpoiler
+      FROM ratings AS r
+      JOIN users AS u
+        ON r.user_id = u.user_id
+      JOIN games AS g
+        ON r.game_id = g.game_id
+      LEFT JOIN numeric_scores AS ns
+        ON r.rating_id = ns.rating_id
+      LEFT JOIN review_texts AS rt
+        ON r.rating_id = rt.rating_id
+      WHERE r.user_id = ?
+      ORDER BY r.posted_at DESC, r.rating_id DESC
+    `,
+    [userId],
+  );
+
+  return userReviewsResponseSchema.parse({
+    reviews: rows.map((row) => ({
+      ...gameReviewSchema.parse({
+        ratingId: row.ratingId,
+        postedAt: row.postedAt,
+        userId: row.userId,
+        username: row.username,
+        score: row.score === null ? null : Number(row.score),
+        reviewBody: row.reviewBody,
+        isSpoiler: Boolean(row.isSpoiler),
+      }),
+      gameId: row.gameId,
+      gameTitle: row.gameTitle,
+    })),
+  }).reviews;
 }

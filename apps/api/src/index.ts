@@ -8,6 +8,7 @@ import { platformsRoute } from "./routes/platforms";
 import { authRoute } from "./routes/auth";
 import { reviewsRoute } from "./routes/reviews";
 import { collectionsRoute } from "./routes/collections";
+import { usersRoute } from "./routes/users";
 
 const app = new Hono();
 app.use(
@@ -24,6 +25,7 @@ app.route("/", platformsRoute);
 app.route("/", gamesRoute);
 app.route("/", reviewsRoute);
 app.route("/", collectionsRoute);
+app.route("/", usersRoute);
 
 const port = Number(process.env.PORT ?? 3001);
 

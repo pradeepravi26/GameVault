@@ -5,11 +5,17 @@ export {
   getGenres,
   getPlatforms,
 } from "./queries/catalog";
-export { createUser, findUserById, findUserByUsername } from "./queries/users";
+export {
+  createUser,
+  findUserById,
+  findUserByUsername,
+  getUserProfileById,
+} from "./queries/users";
 export {
   addOrUpdateReview,
   deleteReviewById,
   getReviewsForGame,
+  getReviewsByUser,
   getUserReviewForGame,
 } from "./queries/reviews";
 export {

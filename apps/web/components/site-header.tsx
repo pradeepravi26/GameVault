@@ -6,6 +6,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/catalog", label: "Catalog" },
   { href: "/collections", label: "Browse Collections" },
+  { href: "/profile", label: "Profile" },
 ];
 
 export function SiteHeader() {

@@ -1,4 +1,5 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import { userProfileSchema } from "@gamevault/contracts";
 import { dbPool } from "../client/pool";
 
 interface UserRow extends RowDataPacket {
@@ -99,4 +100,19 @@ export async function createUser(input: {
   );
 
   return findUserById(result.insertId);
+}
+
+export async function getUserProfileById(userId: number) {
+  const user = await findUserById(userId);
+
+  if (!user) {
+    return null;
+  }
+
+  return userProfileSchema.parse({
+    userId: user.userId,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+  });
 }

@@ -13,6 +13,8 @@ import type {
   Platform,
   RegisterRequest,
   UpdateCollectionRequest,
+  UserProfile,
+  UserReviewsResponse,
   UpsertGameReviewRequest,
 } from "@gamevault/contracts";
 
@@ -141,6 +143,14 @@ export function getCurrentUser() {
   return fetchJsonWithInit<AuthResponse>("/auth/me", {
     credentials: "include",
   });
+}
+
+export function getUserProfile(userId: number) {
+  return fetchJson<UserProfile>(`/users/${userId}`);
+}
+
+export function getReviewsByUser(userId: number) {
+  return fetchJson<UserReviewsResponse>(`/users/${userId}/reviews`);
 }
 
 export function getCollections() {
