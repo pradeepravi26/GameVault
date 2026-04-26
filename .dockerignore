@@ -1,0 +1,12 @@
+.git
+.gitignore
+.pnpm-store
+node_modules
+apps/*/node_modules
+apps/*/.next
+apps/*/dist
+packages/*/node_modules
+packages/*/dist
+coverage
+*.log
+.DS_Store

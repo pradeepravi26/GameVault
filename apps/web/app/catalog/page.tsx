@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { GameListItem, Genre, Platform } from "@gamevault/contracts";
 import { Check, Search, X } from "lucide-react";
@@ -48,7 +48,7 @@ function parseSortState(searchParams: URLSearchParams) {
   return defaultSort;
 }
 
-export default function CatalogPage() {
+function CatalogPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -372,5 +372,29 @@ export default function CatalogPage() {
         </Button>
       </div>
     </section>
+  );
+}
+
+export default function CatalogPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-16">
+          <div className="space-y-3">
+            <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Catalog
+            </p>
+            <h1 className="text-4xl font-semibold tracking-tight">
+              Browse the game library
+            </h1>
+          </div>
+          <div className="rounded-lg border p-4 text-sm text-muted-foreground">
+            Loading catalog...
+          </div>
+        </section>
+      }
+    >
+      <CatalogPageContent />
+    </Suspense>
   );
 }
