@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { GameListItem } from "@gamevault/contracts";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,8 +11,12 @@ export function GameCard({
   className?: string;
 }) {
   return (
-    <article
-      className={cn("overflow-hidden rounded-lg border bg-card text-card-foreground", className)}
+    <Link
+      href={`/games/${game.gameId}`}
+      className={cn(
+        "block overflow-hidden rounded-lg border bg-card text-card-foreground transition hover:bg-accent/30",
+        className,
+      )}
     >
       {game.imageUrl ? (
         <img
@@ -36,6 +41,6 @@ export function GameCard({
           </p>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

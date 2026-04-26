@@ -1,5 +1,6 @@
 import type {
   AuthResponse,
+  GameDetail,
   GameListResponse,
   LoginRequest,
   Genre,
@@ -54,6 +55,10 @@ export function getGames(params?: Record<string, string | number | undefined>) {
   const path = query ? `/games?${query}` : "/games";
 
   return fetchJson<GameListResponse>(path);
+}
+
+export function getGameById(gameId: number) {
+  return fetchJson<GameDetail>(`/games/${gameId}`);
 }
 
 export function getGenres() {
