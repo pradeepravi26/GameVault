@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { GameListItem, Genre, Platform } from "@gamevault/contracts";
-import { Check, Search, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { GameCard } from "@/components/game-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,9 @@ function CatalogPageContent() {
   const [genres, setGenres] = useState<Genre[]>([]);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [page, setPage] = useState(() => parsePage(searchParams.get("page")));
+  const [pageInput, setPageInput] = useState(() =>
+    String(parsePage(searchParams.get("page"))),
+  );
   const [total, setTotal] = useState(0);
   const [searchInput, setSearchInput] = useState(() => searchParams.get("search") ?? "");
   const [activeSearch, setActiveSearch] = useState(() => searchParams.get("search") ?? "");
@@ -186,6 +189,10 @@ function CatalogPageContent() {
     [total],
   );
 
+  useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
+
   const activeSortLabel =
     sortOptions.find(
       (option) => option.sort === sort && option.direction === direction,
@@ -199,6 +206,18 @@ function CatalogPageContent() {
     setSort(defaultSort.sort);
     setDirection(defaultSort.direction);
     setPage(1);
+  }
+
+  function commitPageInput() {
+    if (!/^\d+$/.test(pageInput)) {
+      setPageInput(String(page));
+      return;
+    }
+
+    const parsedPage = Number(pageInput);
+    const nextPage = Math.min(totalPages, Math.max(1, parsedPage));
+    setPage(nextPage);
+    setPageInput(String(nextPage));
   }
 
   return (
@@ -325,51 +344,79 @@ function CatalogPageContent() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>Showing page {page}</span>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-      </div>
+      <div className="flex min-h-[36rem] flex-col">
+        {isLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: pageSize }).map((_, index) => (
+              <div
+                key={`catalog-loading-${index}`}
+                className="h-[21rem] rounded-lg border bg-muted"
+              />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-destructive/30 p-4 text-sm text-destructive">
+            {error}
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {games.map((game) => (
+              <GameCard key={game.gameId} game={game} />
+            ))}
+          </div>
+        )}
 
-      {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: pageSize }).map((_, index) => (
-            <div
-              key={`catalog-loading-${index}`}
-              className="h-[21rem] rounded-lg border bg-muted"
+        <div className="mt-auto flex flex-wrap items-center justify-center border-t pt-4">
+          <form
+            className="inline-flex items-center gap-1 rounded-md px-1"
+            onSubmit={(event) => {
+              event.preventDefault();
+              commitPageInput();
+            }}
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              disabled={page === 1}
+              aria-label="Previous page"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            <Input
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className="h-7 w-12 px-1 text-center text-sm"
+              value={pageInput}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                if (nextValue === "" || /^\d+$/.test(nextValue)) {
+                  setPageInput(nextValue);
+                }
+              }}
+              onBlur={commitPageInput}
+              aria-label="Current page"
             />
-          ))}
-        </div>
-      ) : error ? (
-        <div className="rounded-lg border border-destructive/30 p-4 text-sm text-destructive">
-          {error}
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {games.map((game) => (
-            <GameCard key={game.gameId} game={game} />
-          ))}
-        </div>
-      )}
+            <span className="px-1 text-sm text-muted-foreground">of {totalPages}</span>
 
-      <div className="flex flex-wrap gap-3">
-        <Button
-          variant="outline"
-          disabled={page === 1}
-          onClick={() => setPage((current) => Math.max(1, current - 1))}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          disabled={page >= totalPages}
-          onClick={() =>
-            setPage((current) => Math.min(totalPages, current + 1))
-          }
-        >
-          Next
-        </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              disabled={page >= totalPages}
+              aria-label="Next page"
+              onClick={() =>
+                setPage((current) => Math.min(totalPages, current + 1))
+              }
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </form>
+        </div>
       </div>
     </section>
   );

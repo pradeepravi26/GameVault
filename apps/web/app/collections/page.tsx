@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AuthUser, CollectionSummary } from "@gamevault/contracts";
-import { Heart, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,14 +14,38 @@ import {
   likeCollectionById,
 } from "@/lib/api";
 
+const allCollectionsPageSize = 9;
+
 export default function CollectionsPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [allCollections, setAllCollections] = useState<CollectionSummary[]>([]);
   const [myCollections, setMyCollections] = useState<CollectionSummary[]>([]);
+  const [allCollectionsPage, setAllCollectionsPage] = useState(1);
+  const [allCollectionsPageInput, setAllCollectionsPageInput] = useState("1");
   const [collectionName, setCollectionName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const totalAllCollectionsPages = useMemo(
+    () => Math.max(1, Math.ceil(allCollections.length / allCollectionsPageSize)),
+    [allCollections.length],
+  );
+
+  const pagedAllCollections = useMemo(() => {
+    const startIndex = (allCollectionsPage - 1) * allCollectionsPageSize;
+    return allCollections.slice(startIndex, startIndex + allCollectionsPageSize);
+  }, [allCollections, allCollectionsPage]);
+
+  useEffect(() => {
+    setAllCollectionsPage((currentPage) =>
+      Math.max(1, Math.min(currentPage, totalAllCollectionsPages)),
+    );
+  }, [totalAllCollectionsPages]);
+
+  useEffect(() => {
+    setAllCollectionsPageInput(String(allCollectionsPage));
+  }, [allCollectionsPage]);
 
   async function refreshCollections(userOverride?: AuthUser | null) {
     const resolvedUser = userOverride ?? currentUser;
@@ -34,6 +58,18 @@ export default function CollectionsPage() {
 
     setAllCollections(allResponse.collections);
     setMyCollections(myResponse.collections);
+  }
+
+  function commitAllCollectionsPageInput() {
+    if (!/^\d+$/.test(allCollectionsPageInput)) {
+      setAllCollectionsPageInput(String(allCollectionsPage));
+      return;
+    }
+
+    const parsedPage = Number(allCollectionsPageInput);
+    const nextPage = Math.min(totalAllCollectionsPages, Math.max(1, parsedPage));
+    setAllCollectionsPage(nextPage);
+    setAllCollectionsPageInput(String(nextPage));
   }
 
   useEffect(() => {
@@ -193,82 +229,146 @@ export default function CollectionsPage() {
           </p>
         </div>
 
-        {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-36 rounded-lg border bg-muted" />
-            ))}
-          </div>
-        ) : error ? (
-          <div className="rounded-lg border border-destructive/30 p-4 text-sm text-destructive">
-            {error}
-          </div>
-        ) : allCollections.length === 0 ? (
-          <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-            No collections yet.
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {allCollections.map((collection) => (
-              <article
-                key={collection.collectionId}
-                className="space-y-4 rounded-lg border p-4"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <Link
-                      href={`/collections/${collection.collectionId}`}
-                      className="font-semibold underline-offset-4 hover:underline"
-                    >
-                      {collection.collectionName}
-                    </Link>
-                    <span className="text-xs text-muted-foreground">
-                      by {collection.username}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>{collection.gameCount} games</span>
-                    <span>{collection.likeCount} likes</span>
-                  </div>
-                </div>
-
-                <Button
-                  variant={collection.likedByCurrentUser ? "default" : "outline"}
-                  size="sm"
-                  className={
-                    collection.likedByCurrentUser
-                      ? "border-rose-500 bg-rose-500 text-white hover:bg-rose-500/90"
-                      : undefined
-                  }
-                  disabled={!currentUser}
-                  onClick={async () => {
-                    setError(null);
-
-                    try {
-                      await likeCollectionById(collection.collectionId);
-                      await refreshCollections();
-                    } catch (caughtError) {
-                      setError(
-                        caughtError instanceof Error
-                          ? caughtError.message
-                          : "Unable to like collection.",
-                      );
-                    }
-                  }}
+        <div className="flex min-h-[28rem] flex-col">
+          {isLoading ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="h-36 rounded-lg border bg-muted" />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="rounded-lg border border-destructive/30 p-4 text-sm text-destructive">
+              {error}
+            </div>
+          ) : allCollections.length === 0 ? (
+            <div className="rounded-lg border p-4 text-sm text-muted-foreground">
+              No collections yet.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {pagedAllCollections.map((collection) => (
+                <article
+                  key={collection.collectionId}
+                  className="space-y-4 rounded-lg border p-4"
                 >
-                  <Heart
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <Link
+                        href={`/collections/${collection.collectionId}`}
+                        className="font-semibold underline-offset-4 hover:underline"
+                      >
+                        {collection.collectionName}
+                      </Link>
+                      <span className="text-xs text-muted-foreground">
+                        by {collection.username}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>{collection.gameCount} games</span>
+                      <span>{collection.likeCount} likes</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant={collection.likedByCurrentUser ? "default" : "outline"}
+                    size="sm"
                     className={
                       collection.likedByCurrentUser
-                        ? "h-4 w-4 fill-current"
-                        : "h-4 w-4"
+                        ? "border-rose-500 bg-rose-500 text-white hover:bg-rose-500/90"
+                        : undefined
                     }
-                  />
-                  {collection.likedByCurrentUser ? "Liked" : "Like"}
+                    disabled={!currentUser}
+                    onClick={async () => {
+                      setError(null);
+
+                      try {
+                        await likeCollectionById(collection.collectionId);
+                        await refreshCollections();
+                      } catch (caughtError) {
+                        setError(
+                          caughtError instanceof Error
+                            ? caughtError.message
+                            : "Unable to like collection.",
+                        );
+                      }
+                    }}
+                  >
+                    <Heart
+                      className={
+                        collection.likedByCurrentUser
+                          ? "h-4 w-4 fill-current"
+                          : "h-4 w-4"
+                      }
+                    />
+                    {collection.likedByCurrentUser ? "Liked" : "Like"}
+                  </Button>
+                </article>
+              ))}
+            </div>
+          )}
+
+          {allCollections.length > 0 && !isLoading && !error ? (
+            <div className="mt-auto flex flex-wrap items-center justify-center border-t pt-4">
+              <form
+                className="inline-flex items-center gap-1 rounded-md px-1"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  commitAllCollectionsPageInput();
+                }}
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={allCollectionsPage === 1}
+                  aria-label="Previous page"
+                  onClick={() => {
+                    setAllCollectionsPage((currentPage) =>
+                      Math.max(1, currentPage - 1),
+                    );
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
                 </Button>
-              </article>
-            ))}
-          </div>
-        )}
+
+                <Input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  className="h-7 w-12 px-1 text-center text-sm"
+                  value={allCollectionsPageInput}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    if (nextValue === "" || /^\d+$/.test(nextValue)) {
+                      setAllCollectionsPageInput(nextValue);
+                    }
+                  }}
+                  onBlur={commitAllCollectionsPageInput}
+                  aria-label="Current page"
+                />
+                <span className="px-1 text-sm text-muted-foreground">
+                  of {totalAllCollectionsPages}
+                </span>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={allCollectionsPage >= totalAllCollectionsPages}
+                  aria-label="Next page"
+                  onClick={() => {
+                    setAllCollectionsPage((currentPage) =>
+                      Math.min(totalAllCollectionsPages, currentPage + 1),
+                    );
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
+          ) : null}
+        </div>
       </section>
     </section>
   );
