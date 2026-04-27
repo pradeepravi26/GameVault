@@ -38,11 +38,30 @@ function clearSessionCookie(c: Parameters<typeof deleteCookie>[0]) {
   deleteCookie(c, sessionCookieName, getSessionCookieOptions());
 }
 
+function validationErrorResponse(c: Parameters<typeof setCookie>[0], issues: { path: (string | number)[]; message: string }[]) {
+  return c.json(
+    {
+      error: "Validation failed.",
+      details: issues.map((issue) => ({
+        field: issue.path.length > 0 ? issue.path.join(".") : "body",
+        message: issue.message,
+      })),
+    },
+    400,
+  );
+}
+
 export const authRoute = new Hono();
 
 authRoute.post("/auth/register", async (c) => {
   const body = await c.req.json();
-  const input = registerRequestSchema.parse(body);
+  const parsedInput = registerRequestSchema.safeParse(body);
+
+  if (!parsedInput.success) {
+    return validationErrorResponse(c, parsedInput.error.issues);
+  }
+
+  const input = parsedInput.data;
   const existingUser = await findUserByUsername(input.username);
 
   if (existingUser) {
@@ -69,7 +88,13 @@ authRoute.post("/auth/register", async (c) => {
 
 authRoute.post("/auth/login", async (c) => {
   const body = await c.req.json();
-  const input = loginRequestSchema.parse(body);
+  const parsedInput = loginRequestSchema.safeParse(body);
+
+  if (!parsedInput.success) {
+    return validationErrorResponse(c, parsedInput.error.issues);
+  }
+
+  const input = parsedInput.data;
   const user = await findUserByUsername(input.username);
 
   if (!user) {

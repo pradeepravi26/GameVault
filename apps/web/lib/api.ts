@@ -38,9 +38,34 @@ async function fetchJsonWithInit<T>(path: string, init?: RequestInit) {
     let message = `Request failed: ${response.status}`;
 
     try {
-      const errorBody = (await response.json()) as { error?: string };
+      const errorBody = (await response.json()) as {
+        error?: string;
+        details?: { field?: string; message?: string }[];
+      };
+
       if (errorBody.error) {
         message = errorBody.error;
+      }
+
+      if (errorBody.details && errorBody.details.length > 0) {
+        const detailMessage = errorBody.details
+          .map((detail) => {
+            if (!detail.message) {
+              return null;
+            }
+
+            return detail.field
+              ? `${detail.field}: ${detail.message}`
+              : detail.message;
+          })
+          .filter((detail): detail is string => detail !== null)
+          .join("\n");
+
+        if (detailMessage) {
+          message = errorBody.error
+            ? `${errorBody.error}\n${detailMessage}`
+            : detailMessage;
+        }
       }
     } catch {}
 

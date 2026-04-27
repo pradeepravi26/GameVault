@@ -76,7 +76,7 @@ export default function LoginPage() {
         </div>
 
         {error ? (
-          <div className="rounded-md border border-destructive/30 p-3 text-sm text-destructive">
+          <div className="whitespace-pre-line rounded-md border border-destructive/30 p-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
