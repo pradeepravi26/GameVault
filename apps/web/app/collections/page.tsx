@@ -259,9 +259,12 @@ export default function CollectionsPage() {
                       >
                         {collection.collectionName}
                       </Link>
-                      <span className="text-xs text-muted-foreground">
+                      <Link
+                        href={`/users/${collection.userId}`}
+                        className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                      >
                         by {collection.username}
-                      </span>
+                      </Link>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span>{collection.gameCount} games</span>

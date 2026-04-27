@@ -112,7 +112,12 @@ export default function CollectionDetailPage() {
               {collection.collectionName}
             </h1>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <span>by {collection.username}</span>
+              <Link
+                href={`/users/${collection.userId}`}
+                className="underline-offset-4 hover:text-foreground hover:underline"
+              >
+                by {collection.username}
+              </Link>
               <span>{collection.gameCount} games</span>
               <span>{collection.likeCount} likes</span>
             </div>
@@ -244,25 +249,37 @@ export default function CollectionDetailPage() {
                 {collection.games.map((game) => (
                   <article
                     key={game.gameId}
-                    className="space-y-4 rounded-lg border p-4"
+                    className="space-y-4 overflow-hidden rounded-lg border"
                   >
-                    <div className="space-y-2">
-                      <Link
-                        href={`/games/${game.gameId}`}
-                        className="font-semibold underline-offset-4 hover:underline"
-                      >
-                        {game.title}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">
-                        {game.firstReleaseDate ?? "Release date unavailable"}
-                      </p>
-                    </div>
+                    <Link href={`/games/${game.gameId}`} className="block">
+                      {game.imageUrl ? (
+                        <img
+                          src={game.imageUrl}
+                          alt=""
+                          className="h-40 w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-40 w-full bg-muted" />
+                      )}
+                    </Link>
+                    <div className="space-y-3 px-4 pb-4">
+                      <div className="space-y-2">
+                        <Link
+                          href={`/games/${game.gameId}`}
+                          className="font-semibold underline-offset-4 hover:underline"
+                        >
+                          {game.title}
+                        </Link>
+                        <p className="text-sm text-muted-foreground">
+                          {game.firstReleaseDate ?? "Release date unavailable"}
+                        </p>
+                      </div>
 
-                    {isOwner ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
+                      {isOwner ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
                           setError(null);
 
                           try {
@@ -280,9 +297,10 @@ export default function CollectionDetailPage() {
                           }
                         }}
                       >
-                        Remove Game
-                      </Button>
-                    ) : null}
+                          Remove Game
+                        </Button>
+                      ) : null}
+                    </div>
                   </article>
                 ))}
               </div>
